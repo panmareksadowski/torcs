@@ -1,17 +1,26 @@
 #pragma once
+#include <cmath>
 
 struct DriverParameters{
 	/* Gear Changing Constants*/
 	// RPM values to change gear 
-	int gearUp[6] = {5000,6000,6000,6500,7000,0};
-	int gearDown[6] = {0,2500,3000,3000,3500,3500};
+	int gearUp[6] = {7500,8000,8500,8500,8500,0};
+	int gearDown[6] = {0,5000,5000,6000,6000,7000};
 		
 	/* Stuck constants*/
 	
 	// How many time steps the controller wait before recovering from a stuck position
-	int stuckTime = 25;
+	int stuckTime = 30;
+	int minSpeed = 50;
+	int stuckRecoverTime = 200;
 	// When car angle w.r.t. track axis is grather tan stuckAngle, the car is probably stuck
-	float stuckAngle = .523598775; //PI/6
+	float stuckAngle = 2*M_PI/6; //60 degree
+
+	int startRecording = 150;
+	float tresholdAngle = 2*M_PI/72; //5 degree
+	float angleToSpeedCoef = 3 / (M_PI/180); //3 km/h per 1 degree
+	int sforwardDistance = 0;
+	int eforwardDistance = 25;
 	
 	/* Steering constants*/
 	
@@ -50,4 +59,9 @@ struct DriverParameters{
 	float clutchDec = 0.01;
 	float clutchMaxModifier = 1.3;
 	float clutchMaxTime = 1.5;
+
+	float safeSteer = 0.095; //2 degree 0.143057 (3 degree) -> time 1:10.30
+	float breakCoeficient = 1.3;
+	float powSteerPenalty = 1.2;
+	float followingSteerArea = 200; //m 
 };

@@ -50,7 +50,7 @@ public:
 	// Initialization of the desired angles for the rangefinders
 	virtual void init(float *angles);
 
-private:
+protected:
 	// pre-computed sin5
 	const static float sin5;
 	// pre-computed cos5
@@ -64,19 +64,19 @@ private:
 	const DriverParameters parameters;
 
 	// Solves the gear changing subproblems
-	int getGear(CarState &cs);
+	virtual int getGear(CarState &cs);
 
 	// Solves the steering subproblems
-	float getSteer(CarState &cs);
+	virtual float getSteer(CarState &cs);
 	
-	// Solves the gear changing subproblems
-	float getAccel(CarState &cs);
+	// Solves the accel changing subproblems
+	virtual float getAccel(CarState &cs);
 	
 	// Apply an ABS filter to brake command
-	float filterABS(CarState &cs,float brake);
+	virtual float filterABS(CarState &cs,float brake);
 
 	// Solves the clucthing subproblems
-	void clutching(CarState &cs, float &clutch);
+	virtual void clutching(CarState &cs, float &clutch);
 };
 
 #endif /*SIMPLEDRIVER_H_*/

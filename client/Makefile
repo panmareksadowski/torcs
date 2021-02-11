@@ -4,15 +4,15 @@ CPPFLAGS      = -Wall -g
 # Uncomment the following line for a verbose client
 #CPPFLAGS      = -Wall -g -D __UDP_CLIENT_VERBOSE__
 
+DRIVERS = SimpleDriver.o TrackRecorderDriver.o MyDriver.o MyDriver1.o BrakeTester.o
 #Put here the name of your driver class
-DRIVER_CLASS = MyDriver
+MAIN_DRIVER = MyDriver1
 #Put here the filename of your driver class header 
-DRIVER_INCLUDE = '"$(DRIVER_CLASS).h"' 
-DRIVER_OBJ = $(DRIVER_CLASS).o
+DRIVER_INCLUDE = '"$(MAIN_DRIVER).h"'
 
-EXTFLAGS = -D __DRIVER_CLASS__=$(DRIVER_CLASS) -D __DRIVER_INCLUDE__=$(DRIVER_INCLUDE)
+EXTFLAGS = -D __DRIVER_CLASS__=$(MAIN_DRIVER) -D __DRIVER_INCLUDE__=$(DRIVER_INCLUDE)
 
-OBJECTS = WrapperBaseDriver.o SimpleParser.o CarState.o CarControl.o SimpleDriver.o $(DRIVER_OBJ) 
+OBJECTS = WrapperBaseDriver.o SimpleParser.o CarState.o CarControl.o $(DRIVERS) 
 
 all: $(OBJECTS) client
 
