@@ -34,7 +34,7 @@ struct DriverParameters{
 	/* Accel and Brake Constants*/
 	
 	// max speed allowed
-	float maxSpeed = 150;
+	float maxSpeed = 300;
 	// Min distance from track border to drive at  max speed
 	float maxSpeedDist = 70;
 
