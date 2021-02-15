@@ -1,5 +1,5 @@
 CC            =  g++
-CPPFLAGS      = -Wall -g 
+CPPFLAGS      = -Wall -g -std=c++17
 
 # Uncomment the following line for a verbose client
 #CPPFLAGS      = -Wall -g -D __UDP_CLIENT_VERBOSE__

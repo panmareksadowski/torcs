@@ -27,9 +27,12 @@
 #endif
 
 #include <iostream>
+#include <fstream>
+#include "json/json.hpp"
 #include <cstdlib>
 #include <cstdio>
 #include __DRIVER_INCLUDE__
+#include "BrakeTester.h"
 #include "DriverParameters.h"
 
 /*** defines for UDP *****/
@@ -58,7 +61,8 @@ using namespace std;
 //void parse_args(int argc, char *argv[], char *hostName, unsigned int &serverPort, char *id, unsigned int &maxEpisodes,unsigned int &maxSteps,
 //		bool &noise, double &noiseAVG, double &noiseSTD, long &seed, char *trackName, BaseDriver::tstage &stage);
 void parse_args(int argc, char *argv[], char *hostName, unsigned int &serverPort, char *id, unsigned int &maxEpisodes,
-		  unsigned int &maxSteps, char *trackName, BaseDriver::tstage &stage, DriverParameters& parameters);
+		  unsigned int &maxSteps, char *trackName, BaseDriver::tstage &stage, bool &brakeTest, DriverParameters& parameters);
+void parse_json(char* filename, DriverParameters& parameters);
 
 int main(int argc, char *argv[])
 {
@@ -76,6 +80,7 @@ int main(int argc, char *argv[])
 //    long seed;
     char trackName[1000];
     BaseDriver::tstage stage;
+    bool brakeTest;
     DriverParameters parameters;
 
     tSockAddrIn serverAddress;
@@ -100,7 +105,7 @@ int main(int argc, char *argv[])
 #endif
 
 //    parse_args(argc,argv,hostName,serverPort,id,maxEpisodes,maxSteps,noise,noiseAVG,noiseSTD,seed,trackName,stage);
-    parse_args(argc,argv,hostName,serverPort,id,maxEpisodes,maxSteps,trackName,stage, parameters);
+    parse_args(argc,argv,hostName,serverPort,id,maxEpisodes,maxSteps,trackName,stage, brakeTest, parameters);
 
 //    if (seed>0)
 //    	srand(seed);
@@ -156,7 +161,12 @@ int main(int argc, char *argv[])
            hostInfo->h_addr_list[0], hostInfo->h_length);
     serverAddress.sin_port = htons(serverPort);
 
-    tDriver d(parameters);
+    SimpleDriver *driver;
+    if(brakeTest)
+        driver = new BrakeTester(parameters);
+    else 
+        driver = new tDriver(parameters);
+    SimpleDriver &d = *driver;
     strcpy(d.trackName,trackName);
     d.stage = stage;
 
@@ -169,10 +179,10 @@ int main(int argc, char *argv[])
         ***********************************************************************************/
         do
         {
-        	// Initialize the angles of rangefinders
-        	float angles[19];
-        	d.init(angles);
-        	string initString = SimpleParser::stringify(string("init"),angles,19);
+        	// Initialize the sensorsAngles of rangefinders
+        	float sensorsAngles[19];
+        	d.init(sensorsAngles);
+        	string initString = SimpleParser::stringify(string("init"),sensorsAngles,19);
             cout << "Sending id to server: " << id << endl;
             initString.insert(0,id);
             cout << "Sending init string to the server: " << initString << endl;
@@ -297,7 +307,7 @@ int main(int argc, char *argv[])
 //void parse_args(int argc, char *argv[], char *hostName, unsigned int &serverPort, char *id, unsigned int &maxEpisodes,
 //		  unsigned int &maxSteps,bool &noise, double &noiseAVG, double &noiseSTD, long &seed, char *trackName, BaseDriver::tstage &stage)
 void parse_args(int argc, char *argv[], char *hostName, unsigned int &serverPort, char *id, unsigned int &maxEpisodes,
-		  unsigned int &maxSteps, char *trackName, BaseDriver::tstage &stage, DriverParameters& parameters)
+		  unsigned int &maxSteps, char *trackName, BaseDriver::tstage &stage, bool &brakeTest, DriverParameters& parameters)
 {
     int		i;
 
@@ -313,6 +323,7 @@ void parse_args(int argc, char *argv[], char *hostName, unsigned int &serverPort
 //    seed=0;
     strcpy(trackName,"unknown");
     stage=BaseDriver::UNKNOWN;
+    brakeTest = false;
 
 
     i = 1;
@@ -345,30 +356,150 @@ void parse_args(int argc, char *argv[], char *hostName, unsigned int &serverPort
     	}
 //    	else if (strncmp(argv[i], "seed:", 5) == 0)
 //    	{
-//    	    	sscanf(argv[i],"seed:%ld",&seed);
-//    	    	i++;
+//    	    sscanf(argv[i],"seed:%ld",&seed);
+//    	    i++;
 //    	}
-    	else if (strncmp(argv[i], "maxSpeed:", 5) == 0)
+    	else if (strncmp(argv[i], "maxSpeed:", 9) == 0)
     	{
-    	    	sscanf(argv[i],"maxSpeed:%f",&parameters.maxSpeed);
-    	    	i++;
+            sscanf(argv[i],"maxSpeed:%f",&parameters.maxSpeed);
+            i++;
     	}
     	else if (strncmp(argv[i], "track:", 6) == 0)
     	{
-    	    	sscanf(argv[i],"track:%s",trackName);
-    	    	i++;
+            sscanf(argv[i],"track:%s",trackName);
+            i++;
     	}
     	else if (strncmp(argv[i], "stage:", 6) == 0)
     	{
-				int temp;
-    		   	sscanf(argv[i],"stage:%d",&temp);
-    		   	stage = (BaseDriver::tstage) temp;
-    	    	i++;
-    	    	if (stage<BaseDriver::WARMUP || stage > BaseDriver::RACE)
-					stage = BaseDriver::UNKNOWN;
+            int temp;
+            sscanf(argv[i],"stage:%d",&temp);
+            stage = (BaseDriver::tstage) temp;
+            i++;
+            if (stage<BaseDriver::WARMUP || stage > BaseDriver::RACE)
+                stage = BaseDriver::UNKNOWN;
+    	}
+        else if (strncmp(argv[i], "json:", 5) == 0)
+    	{
+            char filename[99];
+            sscanf(argv[i],"json:%s",filename);
+            parse_json(filename, parameters);
+            i++;
+    	}
+        else if (strncmp(argv[i], "brakeTest", 9) == 0)
+    	{
+            brakeTest = true;
+            i++;
     	}
     	else {
     		i++;		/* ignore bad args */
     	}
+    }
+}
+
+void parse_json(char* filename, DriverParameters& parameters){
+    std::ifstream file(filename);
+    nlohmann::json j;
+    file >> j;
+
+    if(j.contains("sensorsAngles")){
+        std::cout<<"Read from file sensorsAngles: ";
+        const auto sensorsAngles = j["sensorsAngles"];
+        for(uint i = 0; i < parameters.sensorsAngles.size(); ++i){
+            std::cout<<sensorsAngles.at(i)<<", ";
+            parameters.sensorsAngles[i] = sensorsAngles.at(i);
+        }
+        std::cout<<std::endl;
+    }
+    if(j.contains("lowAnglesSensorsIndexes")){
+        std::cout<<"Read from file lowAnglesSensorsIndexes: ";
+        const auto indexes = j["lowAnglesSensorsIndexes"];
+        parameters.lowAnglesSensorsIndexes.clear ();
+        for(int index: indexes){
+            std::cout<<index<<", ";
+            parameters.lowAnglesSensorsIndexes.push_back(index);
+        }
+        std::cout<<std::endl;
+    }
+    if(j.contains("gearUp")){
+        std::cout<<"Read from file gearUp array: ";
+        const auto gearUp = j["gearUp"];
+        for(uint i = 0; i < parameters.gearUp.size(); ++i){
+            std::cout<<gearUp.at(i)<<", ";
+            parameters.gearUp[i] = gearUp.at(i);
+        }
+        std::cout<<std::endl;
+    }
+    if(j.contains("gearDown")){
+        std::cout<<"Read from file gearDown array: ";
+        const auto gearDown = j["gearDown"];
+        for(uint i = 0; i < parameters.gearDown.size(); ++i){
+            std::cout<<gearDown.at(i)<<", ";
+            parameters.gearDown[i] = gearDown.at(i);
+        }
+        std::cout<<std::endl;
+    }
+    if(j.contains("firstLapSpeed")){
+        std::cout<<"Read from file firstLapSpeed: "<<j["firstLapSpeed"]<<std::endl;
+        parameters.firstLapSpeed = j["firstLapSpeed"];
+    }
+    if(j.contains("maxSpeedSteer")){
+        std::cout<<"Read from file maxSpeedSteer: "<<j["maxSpeedSteer"]<<std::endl;
+        parameters.maxSpeedSteer = j["maxSpeedSteer"];
+    }  
+    if(j.contains("losingSpeedPerMeter")){
+        std::cout<<"Read from file losingSpeedPerMeter: "<<j["losingSpeedPerMeter"]<<std::endl;
+        parameters.losingSpeedPerMeter = j["losingSpeedPerMeter"];
+    }  
+    if(j.contains("brakeDelay")){
+        std::cout<<"Read from file brakeDelay: "<<j["brakeDelay"]<<std::endl;
+        parameters.brakeDelay = j["brakeDelay"];
+    } 
+    if(j.contains("powSteerPenalty")){
+        std::cout<<"Read from file powSteerPenalty: "<<j["powSteerPenalty"]<<std::endl;
+        parameters.powSteerPenalty = j["powSteerPenalty"];
+    } 
+    if(j.contains("returnTrackFactor")){
+        std::cout<<"Read from file returnTrackFactor: "<<j["returnTrackFactor"]<<std::endl;
+        parameters.returnTrackFactor = j["returnTrackFactor"];
+    }
+    if(j.contains("explorationDistance")){
+        std::cout<<"Read from file explorationDistance: "<<j["explorationDistance"]<<std::endl;
+        parameters.explorationDistance = j["explorationDistance"];
+    }
+    if(j.contains("sharpCurveSteerTreshold")){
+        std::cout<<"Read from file sharpCurveSteerTreshold: "<<j["sharpCurveSteerTreshold"]<<std::endl;
+        parameters.sharpCurveSteerTreshold = j["sharpCurveSteerTreshold"];
+    }
+    if(j.contains("minDistanceToSharpCurve")){
+        std::cout<<"Read from file minDistanceToSharpCurve: "<<j["minDistanceToSharpCurve"]<<std::endl;
+        parameters.minDistanceToSharpCurve = j["minDistanceToSharpCurve"];
+    }
+    if(j.contains("minSpeed")){
+        std::cout<<"Read from file minSpeed: "<<j["minSpeed"]<<std::endl;
+        parameters.minSpeed = j["minSpeed"];
+    }
+    if(j.contains("maxSpeed")){
+        std::cout<<"Read from file maxSpeed: "<<j["maxSpeed"]<<std::endl;
+        parameters.maxSpeed = j["maxSpeed"];
+    }
+    if(j.contains("logLevel")){
+        std::cout<<"Read from file logLevel: "<<j["logLevel"]<<std::endl;
+        parameters.logLevel = j["logLevel"];
+    }
+    if(j.contains("desiredToSteerAngleFactor")){
+        std::cout<<"Read from file desiredToSteerAngleFactor: "<<j["desiredToSteerAngleFactor"]<<std::endl;
+        parameters.desiredToSteerAngleFactor = j["desiredToSteerAngleFactor"];
+    }
+    if(j.contains("adjustTrackBeforeSharpCurveFactor")){
+        std::cout<<"Read from file adjustTrackBeforeSharpCurveFactor: "<<j["adjustTrackBeforeSharpCurveFactor"]<<std::endl;
+        parameters.adjustTrackBeforeSharpCurveFactor = j["adjustTrackBeforeSharpCurveFactor"];
+    }
+    if(j.contains("maxSteerBeforeSharpCurveFactor")){
+        std::cout<<"Read from file maxSteerBeforeSharpCurveFactor: "<<j["maxSteerBeforeSharpCurveFactor"]<<std::endl;
+        parameters.maxSteerBeforeSharpCurveFactor = j["maxSteerBeforeSharpCurveFactor"];
+    }
+    if(j.contains("brakeStartTestingSpeed")){
+        std::cout<<"Read from file brakeStartTestingSpeed: "<<j["brakeStartTestingSpeed"]<<std::endl;
+        parameters.brakeStartTestingSpeed = j["brakeStartTestingSpeed"];
     }
 }

@@ -265,21 +265,21 @@ SimpleDriver::clutching(CarState &cs, float &clutch)
 }
 
 void
-SimpleDriver::init(float *angles)
+SimpleDriver::init(float *sensorsAngles)
 {
 
-	// set angles as {-90,-75,-60,-45,-30,20,15,10,5,0,5,10,15,20,30,45,60,75,90}
+	// set sensorsAngles as {-90,-75,-60,-45,-30,20,15,10,5,0,5,10,15,20,30,45,60,75,90}
 
 	for (int i=0; i<5; i++)
 	{
-		angles[i]=-90+i*15;
-		angles[18-i]=90-i*15;
+		sensorsAngles[i]=-90+i*15;
+		sensorsAngles[18-i]=90-i*15;
 	}
 
 	for (int i=5; i<9; i++)
 	{
-			angles[i]=-20+(i-5)*5;
-			angles[18-i]=20-(i-5)*5;
+			sensorsAngles[i]=-20+(i-5)*5;
+			sensorsAngles[18-i]=20-(i-5)*5;
 	}
-	angles[9]=0;
+	sensorsAngles[9]=0;
 }

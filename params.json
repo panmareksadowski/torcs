@@ -1,0 +1,20 @@
+{
+  "angles":[-50,-40,-32,-24,-16,-8,-4,-2,-1,0, 1,2,4,8, 16,24,32,40,50],
+  "straightAnglesIndexes": [7,8,9,10,11],
+  "firstLapSpeed": 80,
+  "maxSpeedSteer": 0.1,
+  "losingSpeedPerMeter": 2.0,
+  "brakeDelay": 5,
+  "powSteerPenalty": 1.1,
+  "returnTrackFactor": 0.1,
+  "explorationDistance": 200,
+  "sharpCurveSteerTreshold": 0.375,
+  "minDistanceToSharpCurve": 45,
+  "minSpeed": 50,
+  "maxSpeed": 300,
+  "desiredToSteerAngleFactor": 0.25,
+  "adjustTrackBeforeSharpCurveFactor": 0.05,
+  "maxSteerBeforeSharpCurveFactor": 0.08,
+  "brakeStartTestingSpeed": 290,
+  "logLevel": 1
+}

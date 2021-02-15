@@ -5,7 +5,7 @@
 float
 BrakeTester::getAccel(CarState &cs, float steer)
 {
-    if(accelPhase && cs.getSpeedX() > 150){
+    if(accelPhase && cs.getSpeedX() > parameters.brakeStartTestingSpeed){
         accelPhase = false;
         startDitance = cs.getDistRaced();
         std::cout<<"Speed reached. Start breaking."<<std::endl;
@@ -13,7 +13,7 @@ BrakeTester::getAccel(CarState &cs, float steer)
     if(accelPhase)
         return MyDriver1::getAccel(cs, steer);
     else{
-        std::cout<<cs.getDistRaced()-startDitance<<" : "<<150-cs.getSpeedX()<<std::endl;
+        std::cout<<cs.getDistRaced()-startDitance<<" : "<<cs.getSpeedX()<<std::endl;
         return -1;
     }
 

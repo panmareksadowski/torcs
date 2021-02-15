@@ -47,8 +47,8 @@ public:
 	// Print a restart message 
 	virtual void onRestart();
 
-	// Initialization of the desired angles for the rangefinders
-	virtual void init(float *angles);
+	// Initialization of the desired sensorsAngles for the rangefinders
+	virtual void init(float *sensorsAngles);
 
 protected:
 	// pre-computed sin5

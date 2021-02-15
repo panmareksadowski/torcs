@@ -35,10 +35,10 @@ public:
 	// Default Destructor;
 	virtual ~BaseDriver(){};
 	
-	// Initialization of the desired angles for the rangefinders
-	virtual void init(float *angles){
+	// Initialization of the desired sensorsAngles for the rangefinders
+	virtual void init(float *sensorsAngles){
 		for (int i = 0; i < 19; ++i)
-			angles[i]=-90+i*10;
+			sensorsAngles[i]=-90+i*10;
 	};
 
 	// The main function: 
